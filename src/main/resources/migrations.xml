@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="1" author="archiloque">
+
+        <createTable tableName="log">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="type" type="text"/>
+            <column name="name" type="text"/>
+        </createTable>
+
+        <createTable tableName="log_entry">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="log_id" type="BIGSERIAL">
+                <constraints nullable="false"/>
+            </column>
+            <column name="correlation_id" type="text">
+            <column name="timestamp" type="timestamp with time zone"/>
+            <column name="method" type="text"/>
+            <column name="url" type="text"/>
+            <column name="serviceOrigin" type="text"/>
+            <column name="status_code" type="text"/>
+        </createTable>
+        <createIndex tableName="log_entry" indexName="idx_log_entry_correlation_id">
+            <column name="correlation_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseColumnNames="log_id"
+                                 baseTableName="log_entry"
+                                 referencedColumnNames="id"
+                                 referencedTableName="log"
+                                 constraintName="fk_logEntry_log"
+        />
+
+    </changeSet>
+
+</databaseChangeLog>
