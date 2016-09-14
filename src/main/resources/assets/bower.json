@@ -1,0 +1,13 @@
+{
+  "name": "services-dependencies",
+  "authors": [
+    "Julien Kirch"
+  ],
+  "directory": "src/main/resources/assets/",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "graphviz-d3-renderer": "~0.9.18",
+    "jquery": "~2.2.4"
+  }
+}

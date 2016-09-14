@@ -1,68 +1,55 @@
 package net.archiloque.services_dependencies.resources;
 
 import io.dropwizard.hibernate.UnitOfWork;
-import net.archiloque.services_dependencies.api.Log;
-import net.archiloque.services_dependencies.api.LogEntry;
+import net.archiloque.services_dependencies.logic.apachelog.ApacheLogLogic;
+import net.archiloque.services_dependencies.core.Application;
+import net.archiloque.services_dependencies.db.ApplicationDAO;
 import net.archiloque.services_dependencies.db.LogDAO;
 import net.archiloque.services_dependencies.db.LogEntryDAO;
-import net.archiloque.services_dependencies.logparser.ApacheLogParser;
-import nl.basjes.parse.httpdlog.dissectors.TimeStampDissector;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Locale;
 
 /**
- *
+ * For apache logs
  */
-@Path("/logs/apache")
+@Path("/applications")
 @Produces(MediaType.APPLICATION_JSON)
 public class ApacheLogResource {
 
-    private final LogDAO logDAO;
-    private final LogEntryDAO logEntryDAO;
-    private final ApacheLogParser apacheLogParser;
-    private final DateTimeFormatter dateParser;
+    private final ApplicationDAO applicationDAO;
 
-    public ApacheLogResource(LogDAO logDAO, LogEntryDAO logEntryDAO) {
-        this.logDAO = logDAO;
-        this.logEntryDAO = logEntryDAO;
-        apacheLogParser = new ApacheLogParser();
-        dateParser = DateTimeFormat.forPattern(TimeStampDissector.DEFAULT_APACHE_DATE_TIME_PATTERN).withLocale(Locale.US);
+    private final ApacheLogLogic apacheLogBusiness;
+
+    public ApacheLogResource(LogDAO logDAO, LogEntryDAO logEntryDAO, ApplicationDAO applicationDAO) {
+        apacheLogBusiness = new ApacheLogLogic(logDAO, logEntryDAO, applicationDAO);
+        this.applicationDAO = applicationDAO;
     }
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @UnitOfWork
-    public Log createLog(
-                         @FormDataParam("file") InputStream uploadedInputStream,
-                         @FormDataParam("file") FormDataContentDisposition fileDetail) throws IOException {
-        String name = fileDetail.getFileName();
-        final Log log = new Log();
-        log.setType(Log.APACHE_TYPE);
-        log.setName(name);
-        final Log savedLog = logDAO.create(log);
-        apacheLogParser.parseFile(uploadedInputStream, apacheParsedLogRecord -> {
-            LogEntry logEntry = new LogEntry();
-            logEntry.setLog(savedLog);
-            logEntry.setMethod(apacheParsedLogRecord.getMethod());
-            logEntry.setCorrelationId(apacheParsedLogRecord.getCorrelationId());
-            logEntry.setOrigin((apacheParsedLogRecord.getServiceOrigin() != null) ? apacheParsedLogRecord.getServiceOrigin() : apacheParsedLogRecord.getIp());
-            logEntry.setStatusCode(apacheParsedLogRecord.getStatusCode());
-            logEntry.setUrl(apacheParsedLogRecord.getUrl());
-            logEntry.setTimestamp(dateParser.parseDateTime(apacheParsedLogRecord.getTimestamp()));
-            logEntryDAO.create(logEntry);
-        });
-        return savedLog;
+    @Path("{id : \\d+}/logs/apache")
+    public Response createLog(
+            @PathParam("id") String applicationId,
+            @FormDataParam("file") InputStream uploadedInputStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail) throws IOException {
+        // find the related application
+        Application application = applicationDAO.findById(Long.parseLong(applicationId));
+        if (application != null) {
+            return Response.ok(apacheLogBusiness.createLog(application, uploadedInputStream, fileDetail.getFileName())).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 }

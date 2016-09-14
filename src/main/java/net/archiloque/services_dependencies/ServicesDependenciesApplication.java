@@ -1,14 +1,19 @@
 package net.archiloque.services_dependencies;
 
+import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.ScanningHibernateBundle;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import net.archiloque.services_dependencies.db.ApplicationDAO;
 import net.archiloque.services_dependencies.db.LogDAO;
 import net.archiloque.services_dependencies.db.LogEntryDAO;
+import net.archiloque.services_dependencies.db.SwaggerServiceDAO;
 import net.archiloque.services_dependencies.resources.ApacheLogResource;
+import net.archiloque.services_dependencies.resources.ApplicationResource;
+import net.archiloque.services_dependencies.resources.ServiceDependenciesResource;
 
 public class ServicesDependenciesApplication extends io.dropwizard.Application<ServicesDependenciesConfiguration> {
 
@@ -18,7 +23,7 @@ public class ServicesDependenciesApplication extends io.dropwizard.Application<S
 
     private final ScanningHibernateBundle<ServicesDependenciesConfiguration> hibernateBundle =
             new ScanningHibernateBundle<ServicesDependenciesConfiguration>(
-                    "net.archiloque.services_dependencies.api") {
+                    "net.archiloque.services_dependencies.core") {
 
                 @Override
                 public DataSourceFactory getDataSourceFactory(ServicesDependenciesConfiguration configuration) {
@@ -42,6 +47,7 @@ public class ServicesDependenciesApplication extends io.dropwizard.Application<S
                 return configuration.getDataSourceFactory();
             }
         });
+        bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html"));
     }
 
     @Override
@@ -49,8 +55,12 @@ public class ServicesDependenciesApplication extends io.dropwizard.Application<S
                     final Environment environment) {
         final LogDAO logDAO = new LogDAO(hibernateBundle.getSessionFactory());
         final LogEntryDAO logEntryDAO = new LogEntryDAO(hibernateBundle.getSessionFactory());
-        environment.jersey().register(new ApacheLogResource(logDAO, logEntryDAO));
+        final ApplicationDAO applicationDAO = new ApplicationDAO(hibernateBundle.getSessionFactory());
+        final SwaggerServiceDAO swaggerServiceDAO = new SwaggerServiceDAO(hibernateBundle.getSessionFactory());
 
+        environment.jersey().register(new ApplicationResource(applicationDAO, swaggerServiceDAO));
+        environment.jersey().register(new ApacheLogResource(logDAO, logEntryDAO, applicationDAO));
+        environment.jersey().register(new ServiceDependenciesResource(applicationDAO, logDAO, logEntryDAO, swaggerServiceDAO));
     }
 
 }

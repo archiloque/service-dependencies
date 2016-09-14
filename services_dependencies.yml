@@ -7,3 +7,10 @@ database:
   properties:
     charSet: UTF-8
     hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+server:
+    rootPath: /services/*
+logging:
+  level: INFO
+  loggers:
+    org.hibernate.SQL:
+      level: DEBUG

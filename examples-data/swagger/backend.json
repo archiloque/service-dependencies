@@ -1,0 +1,99 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Swagger for Backend application",
+    "version": "1.0.0",
+    "title": "Backend"
+  },
+  "paths": {
+    "/plops": {
+      "get": {
+        "summary": "List plops",
+        "operationId": "listPlops",
+        "responses": {
+          "200": {
+            "schema": {
+              "schema": {
+                "$ref": "#/definitions/Plops"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a new plop",
+        "operationId": "addPlop",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Plop"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "schema": {
+              "schema": {
+                "$ref": "#/definitions/Plop"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plops/{plopId}": {
+      "get": {
+        "summary": "Find plop by ID",
+        "operationId": "getPlopById",
+        "parameters": [
+          {
+            "name": "plopId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Plop"
+            }
+          },
+          "404": {
+            "description": "Plop not found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Plop": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "Plops": {
+        "type": "object",
+        "properties": {
+          "plops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Plop"
+            }
+          }
+        }
+      }
+    }
+  }
+}
